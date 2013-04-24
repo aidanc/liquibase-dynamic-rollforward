@@ -29,6 +29,15 @@ public class AttachArtifactMojo extends AbstractMojo
 	 */
 	protected File rollforwardDir;
 
+    /**
+     * An optional parameter used to prefix each rollforward filename in the changelog output file. If this excluded, the
+     * absolute file path will be used instead.
+     *
+     * @parameter expression="${rollforwardClasspathOutputPrefix}"
+     *
+     */
+    protected String rollforwardClasspathOutputPrefix;
+
 	/**
 	 * The folder containing the rollback scripts. There must be a matching rollback for each rollforward, and the filename must
 	 * be: [rollforwardname]_rollback.sql
@@ -37,6 +46,15 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @required
 	 */
 	protected File rollbackDir;
+
+    /**
+     * An optional parameter used to prefix each rollback filename in the changelog output file. If this excluded, the
+     * absolute file path will be used instead.
+     *
+     * @parameter expression="${rollbackClasspathOutputPrefix}"
+     *
+     */
+    protected String rollbackClasspathOutputPrefix;
 
 	/**
 	 * Changelog header file. Added to the start of the dynamic changelog.
@@ -106,7 +124,7 @@ public class AttachArtifactMojo extends AbstractMojo
 			//Generate contents of the changelog file based on rollforward entries
 			Set<File> rfFiles = new RollforwardFileRetriever(getLog()).getSortedRollforwardList(rollforwardDir);
 			ChangelogBodyGenerator changelogGenerator = new ChangelogBodyGenerator(velocityEngine, templateVelocityFragment, 
-					rollbackDir);
+					rollbackDir, rollforwardClasspathOutputPrefix, rollbackClasspathOutputPrefix);
 			String changelogBody = changelogGenerator.generateChangelogBody(rfFiles);
 
 			//Write the output file
@@ -128,6 +146,5 @@ public class AttachArtifactMojo extends AbstractMojo
 			throw new RuntimeException("rollbackDir does not exist or is not a directory: " + rollbackDir.getAbsolutePath());
 		}
 	}
-	
 
 }

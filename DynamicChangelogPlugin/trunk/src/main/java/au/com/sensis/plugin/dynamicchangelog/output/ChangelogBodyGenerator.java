@@ -14,17 +14,26 @@ public class ChangelogBodyGenerator {
 	
 	private VelocityEngine velocityEngine;
 	private File templateVelocityFragment;
-	private File rollbackDir;
-	
+	private File rbDir;
+    private String rfClasspathPrefix;
+    private String rbClasspathPrefix;
+
 	public ChangelogBodyGenerator(VelocityEngine velocityEngine, File templateVelocityFragment, File rollbackDir) {
 		super();
 		this.velocityEngine = velocityEngine;
 		this.templateVelocityFragment = templateVelocityFragment;
-		this.rollbackDir = rollbackDir;
-		init();
+		this.rbDir = rollbackDir;
+		initVelocity();
 	}
 
-	private void init() {
+    public ChangelogBodyGenerator(VelocityEngine velocityEngine, File templateVelocityFragment, File rollbackDir,
+                                  String rfClasspathPrefix, String rbClasspathPrefix) {
+        this(velocityEngine, templateVelocityFragment, rollbackDir);
+        this.rfClasspathPrefix = rfClasspathPrefix;
+        this.rbClasspathPrefix = rbClasspathPrefix;
+    }
+
+    private void initVelocity() {
 		try {
 			velocityEngine = new VelocityEngine();
 			Properties p = new Properties() ;
@@ -43,8 +52,8 @@ public class ChangelogBodyGenerator {
 		Template velocityTemplate = velocityEngine.getTemplate(templateVelocityFragment.getName());
 		
 		for(File rfFile : rfFiles) {
-			File rbFile = FileUtils.findMatchingRollback(rollbackDir, rfFile);
-			ChangeLogEntry drEntry = new ChangeLogEntry(rfFile, rbFile, velocityTemplate);
+			File rbFile = FileUtils.findMatchingRollback(rbDir, rfFile);
+			ChangeLogEntry drEntry = new ChangeLogEntry(rfFile, rfClasspathPrefix, rbFile, rbClasspathPrefix, velocityTemplate);
 			sb.append(drEntry.toString());
 		}
 		

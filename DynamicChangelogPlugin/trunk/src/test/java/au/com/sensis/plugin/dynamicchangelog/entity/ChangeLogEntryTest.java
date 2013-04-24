@@ -13,7 +13,7 @@ public class ChangeLogEntryTest {
 
 	@Before
 	public void setUp() {
-		changeLogEntry = new ChangeLogEntry(null, null, null);
+		changeLogEntry = new ChangeLogEntry(null, null, null, null, null);
 	}
 
 	@Test

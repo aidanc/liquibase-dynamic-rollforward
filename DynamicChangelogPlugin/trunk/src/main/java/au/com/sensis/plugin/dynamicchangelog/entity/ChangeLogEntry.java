@@ -16,20 +16,25 @@ public class ChangeLogEntry {
 	
 	private File rollforwardFile;
 	private File rollbackFile;
+    private String rollforwardClasspathPrefix;
+    private String rollbackClasspathPrefix;
 	private Template velocityTemplate;
 
-	public ChangeLogEntry(File rollforwardFile, File rollbackFile, Template velocityTemplate) {
-		super();
-		this.rollforwardFile = rollforwardFile;
-		this.rollbackFile = rollbackFile;
-		this.velocityTemplate = velocityTemplate;
-	}
+    public ChangeLogEntry(File rollforwardFile, String rollforwardClasspathPrefix, File rollbackFile,
+                          String rollbackClasspathPrefix, Template velocityTemplate) {
+        this.rollforwardFile = rollforwardFile;
+        this.rollbackFile = rollbackFile;
+        this.rollforwardClasspathPrefix = rollforwardClasspathPrefix;
+        this.rollbackClasspathPrefix = rollbackClasspathPrefix;
+        this.velocityTemplate = velocityTemplate;
+    }
 
-	public String toString() {
+    public String toString() {
 		try {
 			String comment = rollforwardFile.getName();
-			String rollforwardFilename = rollforwardFile.getAbsolutePath();
-			String rollbackFilename = rollbackFile.getAbsolutePath();
+            String rollforwardFilename = createFilenameWithPath(rollforwardFile, rollforwardClasspathPrefix);
+            String rollbackFilename = createFilenameWithPath(rollbackFile, rollbackClasspathPrefix);
+
 			String context = extractContext(rollforwardFile.getName());
 			
 			VelocityContext velocityContext = new VelocityContext();
@@ -47,7 +52,20 @@ public class ChangeLogEntry {
 			throw new DynamicChangelogException(string, e);
 		}
 	}
-	
+
+
+    private String createFilenameWithPath(File sqlFile, String classpathPrefix) {
+        if(classpathPrefix == null || classpathPrefix.equals("")) {
+            return sqlFile.getAbsolutePath();
+        }
+
+        if(!(classpathPrefix.charAt(classpathPrefix.length()-1) == File.separatorChar)) {
+            classpathPrefix += File.separatorChar;
+        }
+        return classpathPrefix + sqlFile.getName();
+    }
+
+
 	/** Extract the context to use in the changeset. The context will be the env defined in the filename.
 	 *  
 	 * Examples: 
