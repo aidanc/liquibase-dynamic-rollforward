@@ -1,4 +1,4 @@
-    <changeSet id="${rollforwardId}" author="opss">
+    <changeSet id="${rollforwardId}" context="${context}" author="system">
         <comment>${rollforwardComment}</comment>
         <sqlFile path="${rollforwardFilename}" stripComments="true"/>
         <rollback>

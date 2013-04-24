@@ -34,12 +34,10 @@ public class AttachArtifactMojoTest {
 	private File templateFooter;
 	
 	private File changelogOutputFile = new File("target/changelog_output.xml");
-	private String environmentName;
 
 	@Before
 	public void setUp() {
 		initDefaultDirsFromRoots();
-		
 		attachArtifactMojo = new AttachArtifactMojo();
 		attachArtifactMojo.rollforwardDir = rollforwardDir;
 		attachArtifactMojo.rollbackDir = rollbackDir;
@@ -47,37 +45,50 @@ public class AttachArtifactMojoTest {
 		attachArtifactMojo.templateFooter = templateFooter;
 		attachArtifactMojo.templateVelocityFragment = templateVelocityFragment;
 		attachArtifactMojo.changelogOutputFile = changelogOutputFile;
-		attachArtifactMojo.environmentName = environmentName;
 	}
 
 	@Test
 	public void willGenerateValidOutputInValidScenario() throws Exception {
 		//Given
-		String[] expectedIds = {"20121122_1", "20121123_1", "20121124_1"};
+		String[] expectedIds = {"20121122_1", "20121122_2", "20121123_1", "20121124_1"};
+		String[] contexts = {"", "dev", "", ""};
 		//When
 		attachArtifactMojo.execute();
 		//Then
 		Document changelogDoc = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		assertChangeSetEntriesExistAndAreInOrder(expectedIds, changelogDoc);
+		assertChangeSetEntriesExistAndAreInOrder(expectedIds, contexts, changelogDoc);
 	}
 
 	@Test
 	public void willGenerateValidOutputInValidScenarioWithEnv() throws Exception {
 		//Given
-		attachArtifactMojo.environmentName = "dev";
 		String[] expectedIds = {"20121122_1", "20121122_2", "20121123_1", "20121124_1"};
+		String[] contexts = {"", "dev", "", ""};
 		//When
 		attachArtifactMojo.execute();
 		//Then
 		Document changelogDoc = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		assertChangeSetEntriesExistAndAreInOrder(expectedIds, changelogDoc);
+		assertChangeSetEntriesExistAndAreInOrder(expectedIds, contexts, changelogDoc);
+	}
+
+	@Test
+	public void willGenerateValidOutputInValidScenarioWithMultipleEnv() throws Exception {
+		//Given
+		defaultRfBase = rfScenarioBaseDir + "/multipleEnvs";
+		setUp();
+		String[] expectedIds = {"20121122_1", "20121122_2", "20121122_3", "20121123_1", "20121124_1"};
+		String[] contexts = {"", "dev", "prod", "", ""};
+		//When
+		attachArtifactMojo.execute();
+		//Then
+		Document changelogDoc = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
+		assertChangeSetEntriesExistAndAreInOrder(expectedIds, contexts, changelogDoc);
 	}
 
 	@Test
 	public void willThrowExceptionWhenRfNameIsInvalid() throws Exception {
 		//Given
 		defaultRfBase = rfScenarioBaseDir + "/invalidRfName";
-		environmentName = "dev";
 		setUp();
 		
 		//When
@@ -95,7 +106,6 @@ public class AttachArtifactMojoTest {
 	public void willThrowExceptionWhenMissingRollbackInOtherEnv() throws Exception {
 		//Given
 		defaultRfBase = rfScenarioBaseDir + "/missingEnvRb";
-		environmentName = "dev";
 		setUp();
 		
 		//When
@@ -118,7 +128,7 @@ public class AttachArtifactMojoTest {
 		templateFooter = new File(defaultTemplateBase + "/rf_changelog_footer.xml");
 	}
 	
-	private void assertChangeSetEntriesExistAndAreInOrder(String[] orderedIds, Document changelogDoc) 
+	private void assertChangeSetEntriesExistAndAreInOrder(String[] orderedIds, String[] orderedContexts, Document changelogDoc) 
 			throws XpathException {
 		XMLAssert.assertXpathEvaluatesTo(String.valueOf(orderedIds.length), XPATH_COUNT_CHANGESET, changelogDoc);
 		for(int i=0 ; i < orderedIds.length ; i++) {
@@ -126,6 +136,8 @@ public class AttachArtifactMojoTest {
 			XMLAssert.assertXpathExists(getXpathChangesetWithId(orderedIds[i]), changelogDoc);
 			//Check id is in expected position
 			XMLAssert.assertXpathEvaluatesTo(orderedIds[i], getXpathIdOfChangeset(i+1), changelogDoc);
+			//Check context value is correct
+			XMLAssert.assertXpathEvaluatesTo(orderedContexts[i], getXpathContextOfChangeset(i+1), changelogDoc);
 		}
 	}
 	
@@ -136,4 +148,9 @@ public class AttachArtifactMojoTest {
 	private String getXpathIdOfChangeset(int index) {
 		return String.format("//changeSet[%s]/@id", index);
 	}
+	
+	private String getXpathContextOfChangeset(int index) {
+		return String.format("//changeSet[%s]/@context", index);
+	}
+
 }

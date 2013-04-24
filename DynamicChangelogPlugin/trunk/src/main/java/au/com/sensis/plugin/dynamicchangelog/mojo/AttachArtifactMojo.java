@@ -81,7 +81,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * 
 	 * @parameter expression="${environmentName}"
 	 */
-	protected String environmentName;
+	//protected String environmentName;
 
 	/**
 	 * @parameter expression="${project}"
@@ -104,7 +104,7 @@ public class AttachArtifactMojo extends AbstractMojo
 		
 		try {
 			//Generate contents of the changelog file based on rollforward entries
-			Set<File> rfFiles = new RollforwardFileRetriever(environmentName, getLog()).getSortedRollforwardList(rollforwardDir);
+			Set<File> rfFiles = new RollforwardFileRetriever(getLog()).getSortedRollforwardList(rollforwardDir);
 			ChangelogBodyGenerator changelogGenerator = new ChangelogBodyGenerator(velocityEngine, templateVelocityFragment, 
 					rollbackDir);
 			String changelogBody = changelogGenerator.generateChangelogBody(rfFiles);

@@ -3,11 +3,9 @@ package au.com.sensis.plugin.dynamicchangelog.file;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Set;
-import java.util.regex.Matcher;
 
 import org.apache.maven.plugin.logging.Log;
 
-import au.com.sensis.plugin.dynamicchangelog.util.Constants;
 import au.com.sensis.plugin.dynamicchangelog.util.FileUtils;
 
 /** Utility class to retrieve the list of rollforward files to process from the input directory.
@@ -20,9 +18,9 @@ public class RollforwardFileRetriever {
     private Log log;
 	public FilenameFilter rollforwardFilter;
 	
-	public RollforwardFileRetriever(String environmentName, Log log) {
+	public RollforwardFileRetriever(Log log) {
 		this.log = log;
-		rollforwardFilter = createFileFilter(environmentName);
+		rollforwardFilter = createFileFilter();
 	}
 	
 	public Set<File> getSortedRollforwardList(File rollforwardDir) {
@@ -30,7 +28,7 @@ public class RollforwardFileRetriever {
 		return FileUtils.sortFileList(rollforwards);
 	}
 
-	private FilenameFilter createFileFilter(final String environmentName) {
+	private FilenameFilter createFileFilter() {
 		FilenameFilter rollforwardFilter = new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
@@ -44,16 +42,6 @@ public class RollforwardFileRetriever {
 					return false;
 				}
 
-				Matcher envNameMatcher = Constants.ROLLFORWARD_ENV_FILENAME_PATTERN.matcher(name);
-				if(envNameMatcher.matches()) {
-					String envName = envNameMatcher.group(1);
-					if(environmentName == null || !environmentName.equalsIgnoreCase(envName)) {
-						String msg = "Skipping rollforward: %s. Does not match activated environment: %s";
-						log.debug(String.format(msg, name, environmentName));
-						return false;
-					}
-				}
-				
 				String msg = "Rollforward file accepted for inclusion in changelog: %s";
 				log.debug(String.format(msg, name));
 				return true;
