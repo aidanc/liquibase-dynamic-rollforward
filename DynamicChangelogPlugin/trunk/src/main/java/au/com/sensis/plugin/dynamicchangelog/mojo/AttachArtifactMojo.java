@@ -33,7 +33,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${rollforwardDir}" default-value="${basedir}/src/main/resources/sql/rollforward"
 	 * @required
 	 */
-	private File rollforwardDir;
+	protected File rollforwardDir;
 
 	/**
 	 * The folder containing the rollback scripts. There must be a matching rollback for each rollforward, and the filename must
@@ -42,7 +42,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${rollbackDir}" default-value="${basedir}/src/main/resources/sql/rollback"
 	 * @required
 	 */
-	private File rollbackDir;
+	protected File rollbackDir;
 
 	/**
 	 * Changelog header file. Added to the start of the dynamic changelog.
@@ -50,7 +50,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${templateHeader}" default-value="${basedir}/src/main/resources/liquibase/template/rf_changelog_header.xml"
 	 * @required
 	 */
-	private File templateHeader;
+	protected File templateHeader;
 
 	/**
 	 * Changelog footer file. Added to the end of the dynamic changelog.
@@ -58,7 +58,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${templateFooter}" default-value="${basedir}/src/main/resources/liquibase/template/rf_changelog_footer.xml"
 	 * @required
 	 */
-	private File templateFooter;
+	protected File templateFooter;
 
 	/**
 	 * Changelog fragment file (velocity template). One instance of this will be created for each rollforward file. 
@@ -66,7 +66,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${templateVelocityFragment}" default-value="${basedir}/src/main/resources/liquibase/template/rf_changelog_fragment.vm"
 	 * @required
 	 */
-	private File templateVelocityFragment;
+	protected File templateVelocityFragment;
 	
 	/**
 	 * The output file.
@@ -74,7 +74,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @parameter expression="${changelogOutputFile}" default-value="${project.build.outputDirectory}/liquibase/changelog/db_dynamic_rf.xml"
 	 * @required
 	 */
-	private File changelogOutputFile;
+	protected File changelogOutputFile;
 
 	/**
 	 * Name of the environment you are executing against. This will ONLY be used to execute environment
@@ -87,7 +87,7 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * 
 	 * @parameter expression="${environmentName}"
 	 */
-	private String environmentName;
+	protected String environmentName;
 
 	/**
 	 * @parameter expression="${project}"
