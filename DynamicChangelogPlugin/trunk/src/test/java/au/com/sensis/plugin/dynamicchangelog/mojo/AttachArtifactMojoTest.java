@@ -12,12 +12,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import au.com.sensis.plugin.dynamicchangelog.exception.InvalidFilenameException;
+
 
 public class AttachArtifactMojoTest {
 	
 	private AttachArtifactMojo attachArtifactMojo;
 	
-	private String defaultRfBase = "src/test/resources/rollforwards/validScenario"; 
+	private String rfScenarioBaseDir = "src/test/resources/rollforwards";
+	
+	private String defaultRfBase = rfScenarioBaseDir + "/validScenario"; 
 	private String defaultTemplateBase = "src/test/resources/template"; 
 
 	private File rollforwardDir;
@@ -50,8 +54,10 @@ public class AttachArtifactMojoTest {
 		attachArtifactMojo.execute();
 		//Then
 		Document myExpectedOutputXML = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		XMLAssert.assertXpathEvaluatesTo("1", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
+		XMLAssert.assertXpathEvaluatesTo("3", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
 		XMLAssert.assertXpathExists("//changeSet[@id='20121122_1']", myExpectedOutputXML);
+		XMLAssert.assertXpathExists("//changeSet[@id='20121123_1']", myExpectedOutputXML);
+		XMLAssert.assertXpathExists("//changeSet[@id='20121124_1']", myExpectedOutputXML);
 	}
 
 	@Test
@@ -62,15 +68,35 @@ public class AttachArtifactMojoTest {
 		attachArtifactMojo.execute();
 		//Then
 		Document myExpectedOutputXML = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		XMLAssert.assertXpathEvaluatesTo("2", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
+		XMLAssert.assertXpathEvaluatesTo("4", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
 		XMLAssert.assertXpathExists("//changeSet[@id='20121122_1']", myExpectedOutputXML);
 		XMLAssert.assertXpathExists("//changeSet[@id='20121122_2']", myExpectedOutputXML);
+		XMLAssert.assertXpathExists("//changeSet[@id='20121123_1']", myExpectedOutputXML);
+		XMLAssert.assertXpathExists("//changeSet[@id='20121124_1']", myExpectedOutputXML);
 	}
 
 	@Test
+	public void willThrowExceptionWhenRfNameIsInvalid() throws Exception {
+		//Given
+		defaultRfBase = rfScenarioBaseDir + "/invalidRfName";
+		environmentName = "dev";
+		setUp();
+		
+		//When
+		try {
+			attachArtifactMojo.execute();
+			fail("Should have thrown exception due to missing [test] rollback file");
+		} catch (InvalidFilenameException e) {
+			//Then
+			String exMsg = e.getMessage();
+			assertTrue(exMsg.startsWith("Invalid filename: "));
+		}
+	}
+	
+	@Test
 	public void willThrowExceptionWhenMissingRollbackInOtherEnv() throws Exception {
 		//Given
-		defaultRfBase = "src/test/resources/rollforwards/missingEnvRb";
+		defaultRfBase = rfScenarioBaseDir + "/missingEnvRb";
 		environmentName = "dev";
 		setUp();
 		
@@ -80,11 +106,10 @@ public class AttachArtifactMojoTest {
 			fail("Should have thrown exception due to missing [test] rollback file");
 		} catch (RuntimeException e) {
 			//Then
-			String exMsg = e.getCause().getMessage();
+			String exMsg = e.getMessage();
 			assertTrue(exMsg.startsWith("No rollback file found: 20121122_3_[test]"));
 		}
 	}
-
 	
 	private void initDefaultDirsFromRoots() {
 		rollforwardDir = new File(defaultRfBase + "/rf");
@@ -95,17 +120,3 @@ public class AttachArtifactMojoTest {
 		templateFooter = new File(defaultTemplateBase + "/rf_changelog_footer.xml");
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,22 +1,16 @@
 package au.com.sensis.plugin.dynamicchangelog.mojo;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Properties;
 import java.util.Set;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.project.MavenProject;
-import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 
-import au.com.sensis.plugin.dynamicchangelog.entity.DynamicRollforwardEntry;
-import au.com.sensis.plugin.dynamicchangelog.util.FileUtils;
-import au.com.sensis.plugin.dynamicchangelog.util.RollforwardFileRetriever;
+import au.com.sensis.plugin.dynamicchangelog.file.RollforwardFileRetriever;
+import au.com.sensis.plugin.dynamicchangelog.output.ChangelogBodyGenerator;
+import au.com.sensis.plugin.dynamicchangelog.output.ChangelogWriter;
+import au.com.sensis.plugin.dynamicchangelog.validation.RollforwardListingValidator;
 
 /**
  * Create the liquibase changelog for sql rollforward scripts.
@@ -104,36 +98,23 @@ public class AttachArtifactMojo extends AbstractMojo
 	public void execute()
 	{
 		validateInputParams();
-		init();
+
+		//Validate the contents of rollforward/rollback directories
+		new RollforwardListingValidator(rollforwardDir, rollbackDir, getLog()).validate();
 		
 		try {
-			StringBuilder sb = new StringBuilder();
-			Template velocityTemplate = velocityEngine.getTemplate(templateVelocityFragment.getName());
-			Set<File> rollforwards = new RollforwardFileRetriever(environmentName, getLog())
-				.getSortedRollforwardList(rollforwardDir);
-			
-			for(File rfFile : rollforwards) {
-				File rbFile = FileUtils.findMatchingRollback(rollbackDir, rfFile);
-				DynamicRollforwardEntry drEntry = new DynamicRollforwardEntry(rfFile, rbFile, velocityTemplate);
-				sb.append(drEntry.toString());
-			}
-			writeOutputFile(sb.toString());
+			//Generate contents of the changelog file based on rollforward entries
+			Set<File> rfFiles = new RollforwardFileRetriever(environmentName, getLog()).getSortedRollforwardList(rollforwardDir);
+			ChangelogBodyGenerator changelogGenerator = new ChangelogBodyGenerator(velocityEngine, templateVelocityFragment, 
+					rollbackDir);
+			String changelogBody = changelogGenerator.generateChangelogBody(rfFiles);
+
+			//Write the output file
+			ChangelogWriter ChangelogWriter = new ChangelogWriter(changelogOutputFile, templateHeader, templateFooter, getLog());
+			ChangelogWriter.write(changelogBody);
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		}
-	}
-	
-	private void init() {
-		try {
-			velocityEngine = new VelocityEngine();
-			Properties p = new Properties() ;
-            p.setProperty("resource.loader","file");
-            p.setProperty("file.resource.loader.class", "org.apache.velocity.runtime.resource.loader.FileResourceLoader");
-            p.setProperty("file.resource.loader.path", templateVelocityFragment.getParent());
-			velocityEngine.init(p);
-		} catch (Exception e) {
-			throw new RuntimeException("Error while initializing VelocityEngine", e);
 		}
 	}
 	
@@ -148,41 +129,5 @@ public class AttachArtifactMojo extends AbstractMojo
 		}
 	}
 	
-	private void writeOutputFile(String generatedChangelog) throws IOException {
-		
-		if(changelogOutputFile.exists()) {
-			changelogOutputFile.delete();
-		}
-		File parentFile = changelogOutputFile.getParentFile();
-		if(!parentFile.exists()) {
-			parentFile.mkdirs();
-		}
-
-		changelogOutputFile.createNewFile();
-		BufferedWriter out = new BufferedWriter(new FileWriter(changelogOutputFile));
-		
-		//Write header
-		writeFile(templateHeader, out);
-		
-		//Write entries for rollforwards
-		out.write(generatedChangelog);
-
-		//Write footer
-		writeFile(templateFooter, out);
-
-		out.flush();
-		out.close();
-	}
-	
-	private void writeFile(File toWrite, BufferedWriter out) throws IOException {
-		BufferedReader headerReader = new BufferedReader(new FileReader(toWrite));
-		String line = headerReader.readLine();
-		while(line != null) {
-			out.write(line);
-			out.write("\n");
-			line = headerReader.readLine();
-		}
-		headerReader.close();
-	}
 
 }

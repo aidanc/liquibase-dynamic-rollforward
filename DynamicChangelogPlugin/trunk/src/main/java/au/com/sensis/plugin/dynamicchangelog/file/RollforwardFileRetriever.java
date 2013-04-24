@@ -1,17 +1,23 @@
-package au.com.sensis.plugin.dynamicchangelog.util;
+package au.com.sensis.plugin.dynamicchangelog.file;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 
 import org.apache.maven.plugin.logging.Log;
 
+import au.com.sensis.plugin.dynamicchangelog.util.Constants;
+import au.com.sensis.plugin.dynamicchangelog.util.FileUtils;
 
+/** Utility class to retrieve the list of rollforward files to process from the input directory.
+ * 
+ * @author Aidan Carter
+ *
+ */
 public class RollforwardFileRetriever {
 
-    private Log log; //Annoying to have to pass this reference around...
+    private Log log;
 	public FilenameFilter rollforwardFilter;
 	
 	public RollforwardFileRetriever(String environmentName, Log log) {
@@ -21,12 +27,7 @@ public class RollforwardFileRetriever {
 	
 	public Set<File> getSortedRollforwardList(File rollforwardDir) {
 		File[] rollforwards = rollforwardDir.listFiles(rollforwardFilter);
-		Set<File> sortedRollforwards = new TreeSet<File>();
-		for(File rff : rollforwards) {
-			FileUtils.validateRollforwardFilename(rff.getName());
-			sortedRollforwards.add(rff);
-		}
-		return sortedRollforwards;
+		return FileUtils.sortFileList(rollforwards);
 	}
 
 	private FilenameFilter createFileFilter(final String environmentName) {
@@ -43,7 +44,7 @@ public class RollforwardFileRetriever {
 					return false;
 				}
 
-				Matcher envNameMatcher = FileUtils.ROLLFORWARD_ENV_FILENAME_PATTERN.matcher(name);
+				Matcher envNameMatcher = Constants.ROLLFORWARD_ENV_FILENAME_PATTERN.matcher(name);
 				if(envNameMatcher.matches()) {
 					String envName = envNameMatcher.group(1);
 					if(environmentName == null || !environmentName.equalsIgnoreCase(envName)) {
@@ -53,7 +54,7 @@ public class RollforwardFileRetriever {
 					}
 				}
 				
-				String msg = "Rollforward file accepted for processing: %s";
+				String msg = "Rollforward file accepted for inclusion in changelog: %s";
 				log.debug(String.format(msg, name));
 				return true;
 			}

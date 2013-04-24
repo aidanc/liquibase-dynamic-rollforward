@@ -1,20 +1,22 @@
 package au.com.sensis.plugin.dynamicchangelog.entity;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 
+import au.com.sensis.plugin.dynamicchangelog.exception.DynamicChangelogException;
 import au.com.sensis.plugin.dynamicchangelog.util.FileUtils;
 
-public class DynamicRollforwardEntry {
+public class ChangeLogEntry {
 	
 	private File rollforwardFile;
 	private File rollbackFile;
 	private Template velocityTemplate;
 
-	public DynamicRollforwardEntry(File rollforwardFile, File rollbackFile, Template velocityTemplate) {
+	public ChangeLogEntry(File rollforwardFile, File rollbackFile, Template velocityTemplate) {
 		super();
 		this.rollforwardFile = rollforwardFile;
 		this.rollbackFile = rollbackFile;
@@ -36,11 +38,9 @@ public class DynamicRollforwardEntry {
 			StringWriter writer = new StringWriter();
 			velocityTemplate.merge(context, writer);
 			return writer.toString();
-		} catch (Exception e) {
+		} catch (IOException e) {
 			String string = "Error while generating Velocity template for file: " + rollforwardFile.getName();
-			throw new RuntimeException(string, e);
+			throw new DynamicChangelogException(string, e);
 		}
 	}
-	
-
 }

@@ -1,22 +1,13 @@
 package au.com.sensis.plugin.dynamicchangelog.util;
 
+import static au.com.sensis.plugin.dynamicchangelog.util.Constants.*;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class FileUtils {
 	
-	public static final String ROLLBACK_SUFFIX = "_rollback";
-	public static final String SQL_SUFFIX = ".sql";
-	
-	/** Filename for rollforwards must match this pattern. e.g.: 20120607_1_recreate_mvs_for_tuning.sql */
-	private static final String ROLLFORWARD_FILENAME_REGEX = "^\\d{8}_\\d+_\\w+\\.sql$";
-	private static final Pattern ROLLFORWARD_FILENAME_PATTERN = Pattern.compile(ROLLFORWARD_FILENAME_REGEX);
-
-	/** Filename for environment specific rollforwards must match this pattern. e.g.: 20120607_1_[test]_recreate_mvs_for_tuning.sql */
-	private static final String ROLLFORWARD_ENV_FILENAME_REGEX = "^\\d{8}_\\d+_\\[(\\w+)\\]_\\w+\\.sql$";
-	public static final Pattern ROLLFORWARD_ENV_FILENAME_PATTERN = Pattern.compile(ROLLFORWARD_ENV_FILENAME_REGEX);
-
 	public static File findMatchingRollback(File rollbackDir, File rollforwardFile) {
 		
 		final String rollbackName = convertName(rollforwardFile.getName());
@@ -68,6 +59,20 @@ public class FileUtils {
 		String filename = rollforwardFile.getName();
 		int idEndIndex = filename.indexOf("_", 9);
 		return filename.substring(0, idEndIndex);
+	}
+	
+	/** Utility method to sort an array of files by their filename. This is used for ensuring
+	 * there are no possible platform dependent behaviour issues when performing a directory listing.
+	 * 
+	 * @param fileListing
+	 * @return
+	 */
+	public static Set<File> sortFileList(File[] fileListing) {
+		Set<File> sortedFileSet = new TreeSet<File>();
+		for(File rff : fileListing) {
+			sortedFileSet.add(rff);
+		}
+		return sortedFileSet;
 	}
 	
 	
