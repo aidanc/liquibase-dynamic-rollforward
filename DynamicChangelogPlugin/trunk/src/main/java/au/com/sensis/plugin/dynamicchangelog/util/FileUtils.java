@@ -16,18 +16,25 @@ public class FileUtils {
 	private static final String ROLLFORWARD_FILENAME_REGEX = "^\\d{8}_\\d+_.+\\.sql$";
 	private static final Pattern ROLLFORWARD_FILENAME_PATTERN = Pattern.compile(ROLLFORWARD_FILENAME_REGEX);
 	
-	public static FilenameFilter excludeSvnFilter = new FilenameFilter() {
+	public static FilenameFilter rollforwardFilter = new FilenameFilter() {
 		@Override
 		public boolean accept(File dir, String name) {
+			//exclude svn metadata
 			if(name.equals(".svn")) {
 				return false;
 			}
+			
+			//exclude subdirectories
+			if(new File(dir, name).isDirectory()) {
+				return false;
+			}
+			
 			return true;
 		}
 	}; 
 	
 	public static Set<File> findRollforwardFiles(File rollforwardDir) {
-		File[] rollforwards = rollforwardDir.listFiles(excludeSvnFilter);
+		File[] rollforwards = rollforwardDir.listFiles(rollforwardFilter);
 		Set<File> sortedRollforwards = new TreeSet<File>();
 		for(File rff : rollforwards) {
 			FileUtils.validateRollforwardFilename(rff.getName());
