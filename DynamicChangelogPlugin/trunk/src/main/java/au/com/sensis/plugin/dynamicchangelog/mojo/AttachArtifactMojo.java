@@ -16,6 +16,7 @@ import org.apache.velocity.app.VelocityEngine;
 
 import au.com.sensis.plugin.dynamicchangelog.entity.DynamicRollforwardEntry;
 import au.com.sensis.plugin.dynamicchangelog.util.FileUtils;
+import au.com.sensis.plugin.dynamicchangelog.util.RollforwardFileRetriever;
 
 /**
  * Create the liquibase changelog for sql rollforward scripts.
@@ -74,7 +75,20 @@ public class AttachArtifactMojo extends AbstractMojo
 	 * @required
 	 */
 	private File changelogOutputFile;
-	
+
+	/**
+	 * Name of the environment you are executing against. This will ONLY be used to execute environment
+	 * specific rollforward files.
+	 *  
+	 * e.g.: 20120918_1_[test]_add_config_entries_for_stepup.sql
+	 * 
+	 * Note that any rollforward files for different environments will be ignored. So in the above example, if
+	 * the environmentName selected was "dev", then the file above will not be processed.
+	 * 
+	 * @parameter expression="${environmentName}"
+	 */
+	private String environmentName;
+
 	/**
 	 * @parameter expression="${project}"
 	 * @required
@@ -82,7 +96,6 @@ public class AttachArtifactMojo extends AbstractMojo
 	 */
 	@SuppressWarnings("unused")
 	private MavenProject project;
-	
 	
 	private VelocityEngine velocityEngine;
 
@@ -96,8 +109,9 @@ public class AttachArtifactMojo extends AbstractMojo
 		try {
 			StringBuilder sb = new StringBuilder();
 			Template velocityTemplate = velocityEngine.getTemplate(templateVelocityFragment.getName());
-
-			Set<File> rollforwards = FileUtils.findRollforwardFiles(rollforwardDir);
+			Set<File> rollforwards = new RollforwardFileRetriever(environmentName, getLog())
+				.getSortedRollforwardList(rollforwardDir);
+			
 			for(File rfFile : rollforwards) {
 				File rbFile = FileUtils.findMatchingRollback(rollbackDir, rfFile);
 				DynamicRollforwardEntry drEntry = new DynamicRollforwardEntry(rfFile, rbFile, velocityTemplate);
