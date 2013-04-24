@@ -8,6 +8,7 @@ import java.io.FileReader;
 
 import org.custommonkey.xmlunit.XMLAssert;
 import org.custommonkey.xmlunit.XMLUnit;
+import org.custommonkey.xmlunit.exceptions.XpathException;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -17,6 +18,8 @@ import au.com.sensis.plugin.dynamicchangelog.exception.InvalidFilenameException;
 
 public class AttachArtifactMojoTest {
 	
+	private static final String XPATH_COUNT_CHANGESET = "count(/databaseChangeLog/changeSet)";
+
 	private AttachArtifactMojo attachArtifactMojo;
 	
 	private String rfScenarioBaseDir = "src/test/resources/rollforwards";
@@ -50,29 +53,24 @@ public class AttachArtifactMojoTest {
 	@Test
 	public void willGenerateValidOutputInValidScenario() throws Exception {
 		//Given
+		String[] expectedIds = {"20121122_1", "20121123_1", "20121124_1"};
 		//When
 		attachArtifactMojo.execute();
 		//Then
-		Document myExpectedOutputXML = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		XMLAssert.assertXpathEvaluatesTo("3", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121122_1']", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121123_1']", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121124_1']", myExpectedOutputXML);
+		Document changelogDoc = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
+		assertChangeSetEntriesExistAndAreInOrder(expectedIds, changelogDoc);
 	}
 
 	@Test
 	public void willGenerateValidOutputInValidScenarioWithEnv() throws Exception {
 		//Given
 		attachArtifactMojo.environmentName = "dev";
+		String[] expectedIds = {"20121122_1", "20121122_2", "20121123_1", "20121124_1"};
 		//When
 		attachArtifactMojo.execute();
 		//Then
-		Document myExpectedOutputXML = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
-		XMLAssert.assertXpathEvaluatesTo("4", "count(/databaseChangeLog/changeSet)", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121122_1']", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121122_2']", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121123_1']", myExpectedOutputXML);
-		XMLAssert.assertXpathExists("//changeSet[@id='20121124_1']", myExpectedOutputXML);
+		Document changelogDoc = XMLUnit.buildDocument(XMLUnit.newTestParser(), new FileReader(changelogOutputFile));
+		assertChangeSetEntriesExistAndAreInOrder(expectedIds, changelogDoc);
 	}
 
 	@Test
@@ -118,5 +116,24 @@ public class AttachArtifactMojoTest {
 		templateHeader = new File(defaultTemplateBase + "/rf_changelog_header.xml");
 		templateVelocityFragment = new File(defaultTemplateBase + "/rf_changelog_fragment.vm");
 		templateFooter = new File(defaultTemplateBase + "/rf_changelog_footer.xml");
+	}
+	
+	private void assertChangeSetEntriesExistAndAreInOrder(String[] orderedIds, Document changelogDoc) 
+			throws XpathException {
+		XMLAssert.assertXpathEvaluatesTo(String.valueOf(orderedIds.length), XPATH_COUNT_CHANGESET, changelogDoc);
+		for(int i=0 ; i < orderedIds.length ; i++) {
+			//Check id is present
+			XMLAssert.assertXpathExists(getXpathChangesetWithId(orderedIds[i]), changelogDoc);
+			//Check id is in expected position
+			XMLAssert.assertXpathEvaluatesTo(orderedIds[i], getXpathIdOfChangeset(i+1), changelogDoc);
+		}
+	}
+	
+	private String getXpathChangesetWithId(String id) {
+		return String.format("//changeSet[@id='%s']", id);
+	}
+	
+	private String getXpathIdOfChangeset(int index) {
+		return String.format("//changeSet[%s]/@id", index);
 	}
 }
